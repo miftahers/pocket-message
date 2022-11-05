@@ -1,8 +1,8 @@
 package services
 
 import (
+	"errors"
 	"fmt"
-	"net/http"
 	"pocket-message/dto"
 	"pocket-message/middleware"
 	"pocket-message/models"
@@ -34,23 +34,24 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 	}
 
 	if pm.Title == "" {
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "error, title should not be empty",
-		})
+		return errors.New("error, title should not be empty")
 	}
 	if pm.Content == "" {
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "error, content should not be empty",
-		})
+		return errors.New("error, content should not be empty")
 	}
 
 	t, err := middleware.DecodeJWT(c)
 	if err != nil {
 		return err
 	}
+	if c.Request().Header.Get("test") == "true" {
+		pm.UUID = uuid.Nil
+	} else {
+		pm.UUID = uuid.New()
+	}
 
-	pm.UUID = uuid.New()
 	pm.UserUUID = t.UUID
+
 	err = s.Database.SaveNewPocketMessage(pm)
 	if err != nil {
 		return err

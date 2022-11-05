@@ -27,8 +27,8 @@ func (h *pocketMessageHandler) NewPocketMessage(c echo.Context) error {
 			"message": err.Error(),
 		})
 	}
-	return c.JSON(http.StatusOK, echo.Map{
-		"message": "success",
+	return c.JSON(http.StatusCreated, echo.Map{
+		"message": "created",
 	})
 }
 
