@@ -7,6 +7,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func NewPocketMessageHandler(service services.PocketMessageServices) PocketMessageHandler {
+	return &pocketMessageHandler{
+		PocketMessageServices: service,
+	}
+}
+
 type PocketMessageHandler interface {
 	NewPocketMessage(echo.Context) error
 	GetPocketMessageByRandomID(echo.Context) error

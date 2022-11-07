@@ -2,17 +2,15 @@ package controllers
 
 import (
 	"bytes"
-	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	m "pocket-message/controllers/mock"
 	"pocket-message/dto"
 	"pocket-message/middleware"
 	"pocket-message/models"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -24,88 +22,12 @@ type PocketMessageSuite struct {
 	handler PocketMessageHandler
 }
 
-type AnyTime struct{}
-
-// Match satisfies sqlmock.Argument interface
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
-}
-
-type mockPocketMessageServices struct{}
-
-func (s *mockPocketMessageServices) NewPocketMessage(c echo.Context) error {
-	var pm models.PocketMessage
-	err := c.Bind(&pm)
-	if err != nil {
-		return err
-	}
-
-	if pm.Title == "" {
-		return errors.New("error, title should not be empty")
-	}
-	if pm.Content == "" {
-		return errors.New("error, content should not be empty")
-	}
-
-	return nil
-}
-func (s *mockPocketMessageServices) GetPocketMessageByRandomID(c echo.Context) (dto.PocketMessageWithRandomID, error) {
-	rid := c.Param("random_id")
-	if rid == "" {
-		return dto.PocketMessageWithRandomID{}, errors.New("error, random_id parameter can not be empty")
-	}
-
-	return dto.PocketMessageWithRandomID{Title: "Ini Test", Content: "Ini juga Test"}, nil
-}
-func (s *mockPocketMessageServices) UpdatePocketMessage(c echo.Context) error {
-	var pm models.PocketMessage
-	err := c.Bind(&pm)
-	if err != nil {
-		return err
-	}
-
-	if pm.Title == "" {
-		return errors.New("error, title should not be empty")
-	}
-	if pm.Content == "" {
-		return errors.New("error, content should not be empty")
-	}
-
-	pm.UUID, err = uuid.Parse(c.Param("uuid"))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-func (s *mockPocketMessageServices) DeletePocketMessage(c echo.Context) error {
-	_, err := uuid.Parse(c.Param("uuid"))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (s *mockPocketMessageServices) GetUserPocketMessage(c echo.Context) ([]dto.OwnedMessage, error) {
-	_, err := middleware.DecodeJWT(c)
-	if err != nil {
-		return nil, err
-	}
-	return []dto.OwnedMessage{
-		{
-			Title:   "halo dunia",
-			Content: "halo kamu",
-			Visit:   1,
-		},
-	}, nil
-}
-
 func TestSuitePocketMessage(t *testing.T) {
 	suite.Run(t, new(PocketMessageSuite))
 }
 func (s *PocketMessageSuite) SetupSuite() {
 
-	handler := NewPocketMessageHandler(&mockPocketMessageServices{})
+	handler := NewPocketMessageHandler(&m.MockPocketMessageServices{})
 	s.handler = handler
 }
 func (s *PocketMessageSuite) TearDownSuite() {
