@@ -19,7 +19,8 @@ func Init(db *gorm.DB) *echo.Echo {
 	mid.LogMiddleware(e)
 
 	repo := repositories.NewGorm(db)
-	userServ, pmServ := services.NewServices(repo)
+	userServ := services.NewUserServices(repo)
+	pmServ := services.NewPocketMessageServices(repo)
 	uHandler := controllers.NewUserHandler(userServ)
 	pmHandler := controllers.NewPocketMessageHandler(pmServ)
 

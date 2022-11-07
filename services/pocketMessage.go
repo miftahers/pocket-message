@@ -12,6 +12,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func NewPocketMessageServices(db repositories.Database) PocketMessageServices {
+	return &pmServices{Database: db}
+}
+
 type PocketMessageServices interface {
 	NewPocketMessage(echo.Context) error
 	GetPocketMessageByRandomID(echo.Context) (dto.PocketMessageWithRandomID, error)

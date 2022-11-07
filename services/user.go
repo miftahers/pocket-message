@@ -13,6 +13,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func NewUserServices(db repositories.Database) UserServices {
+	return &userServices{Database: db}
+}
+
 type UserServices interface {
 	SignUp(echo.Context) error
 	Login(echo.Context) (dto.Login, error)
