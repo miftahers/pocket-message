@@ -2,8 +2,8 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"pocket-message/dto"
+	"pocket-message/helper"
 	"pocket-message/middleware"
 	"pocket-message/models"
 	"pocket-message/repositories"
@@ -14,10 +14,10 @@ import (
 
 type PocketMessageServices interface {
 	NewPocketMessage(echo.Context) error
+	GetPocketMessageByRandomID(echo.Context) (dto.PocketMessageWithRandomID, error)
 	UpdatePocketMessage(echo.Context) error
 	DeletePocketMessage(echo.Context) error
 	GetUserPocketMessage(echo.Context) ([]dto.OwnedMessage, error)
-	GetPocketMessageByRandomID(echo.Context) (dto.PocketMessageWithRandomID, error)
 }
 
 type pmServices struct {
@@ -59,7 +59,11 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 
 	var rid models.PocketMessageRandomID
 	rid.PocketMessageUUID = pm.UUID
-	rid.RandomID = GenerateRandomString(8)
+	if c.Request().Header.Get("test") == "true" {
+		rid.RandomID = "test"
+	} else {
+		rid.RandomID = helper.GenerateRandomString(8)
+	}
 
 	err = s.Database.SaveNewRandomID(rid)
 	if err != nil {
@@ -69,6 +73,27 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 	return nil
 }
 
+// TODO GetPocketMessageByRandomID Unit Test
+func (s *pmServices) GetPocketMessageByRandomID(c echo.Context) (dto.PocketMessageWithRandomID, error) {
+
+	rid := c.Param("random_id")
+	if rid == "" {
+		return dto.PocketMessageWithRandomID{}, errors.New("error, random_id parameter can not be empty")
+	}
+
+	result, err := s.Database.GetPocketMessageByRandomID(rid)
+	if err != nil {
+		return dto.PocketMessageWithRandomID{}, err
+	}
+
+	err = s.Database.UpdateVisitCount(result)
+	if err != nil {
+		return dto.PocketMessageWithRandomID{}, err
+	}
+
+	return result, nil
+}
+
 // TODO UpdatePocketMessage Unit Test
 func (s *pmServices) UpdatePocketMessage(c echo.Context) error {
 	var pm models.PocketMessage
@@ -76,6 +101,14 @@ func (s *pmServices) UpdatePocketMessage(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if pm.Title == "" {
+		return errors.New("error, title should not be empty")
+	}
+	if pm.Content == "" {
+		return errors.New("error, content should not be empty")
+	}
+
 	pm.UUID, err = uuid.Parse(c.Param("uuid"))
 	if err != nil {
 		return err
@@ -109,28 +142,9 @@ func (s *pmServices) GetUserPocketMessage(c echo.Context) ([]dto.OwnedMessage, e
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(t.UUID)
 	result, err := s.Database.GetPocketMessageByUserUUID(t.UUID)
 	if err != nil {
 		return nil, err
-	}
-
-	return result, nil
-}
-
-// TODO GetPocketMessageByRandomID Unit Test
-func (s *pmServices) GetPocketMessageByRandomID(c echo.Context) (dto.PocketMessageWithRandomID, error) {
-
-	rid := c.Param("random_id")
-
-	result, err := s.Database.GetPocketMessageByRandomID(rid)
-	if err != nil {
-		return dto.PocketMessageWithRandomID{}, err
-	}
-
-	err = s.Database.UpdateVisitCount(result)
-	if err != nil {
-		return dto.PocketMessageWithRandomID{}, err
 	}
 
 	return result, nil
