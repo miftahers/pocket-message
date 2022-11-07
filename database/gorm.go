@@ -10,10 +10,10 @@ import (
 )
 
 var (
-	// DB_Address = os.Getenv("DB_ADDRESS")
-	// DB_Name = os.Getenv("DB_NAME")
-	DB_Address = "localhost:3306"
-	DB_Name    = "pocket_message"
+	DB_Address = os.Getenv("DB_ADDRESS")
+	DB_Name    = os.Getenv("DB_NAME")
+	// DB_Address = "localhost:3306"
+	// DB_Name    = "pocket_message"
 )
 
 func SetEnv(key, def string) string {

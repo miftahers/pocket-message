@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+  db-mysql:
+    image: mysql:8.0.28
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "pocket-message"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 5s
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+
+  pocket_message-app:
+    build: ./
+    depends_on:
+      db-mysql:
+        condition: service_healthy
+    environment:
+      APIPort: ":8080"
+      DB_ADDRESS: "db-mysql:3306"
+      DB_NAME: "pocket_message"
+    ports:
+      - "80:8080"
