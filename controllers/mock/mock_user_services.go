@@ -43,7 +43,10 @@ func (s *MockUserServices) Login(c echo.Context) (dto.Login, error) {
 }
 func (s *MockUserServices) UpdateUsername(c echo.Context) error {
 	var u models.User
-	c.Bind(&u)
+	err := c.Bind(&u)
+	if err != nil {
+		return err
+	}
 	if u.Username == "" {
 		return errors.New("error, username should not be empty")
 	}
