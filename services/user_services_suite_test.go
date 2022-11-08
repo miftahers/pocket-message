@@ -393,6 +393,42 @@ func (s *UserSuite) TestUpdateUsername() {
 		})
 	}
 }
+func (s *UserSuite) TestUpdateUsernameErrorBinding() {
+	testCase := []struct {
+		name        string
+		body        models.User
+		method      string
+		expectError error
+	}{
+		{
+			name: "update_username-error_binding",
+			body: models.User{
+				Username: "udin",
+				Password: "12345678",
+			},
+			method:      http.MethodPost,
+			expectError: echo.NewHTTPError(415, "Unsupported Media Type"),
+		},
+	}
+	for _, v := range testCase {
+		s.T().Run(v.name, func(t *testing.T) {
+			res, _ := json.Marshal(v.body)
+			r := httptest.NewRequest(v.method, "/", bytes.NewBuffer(res))
+			w := httptest.NewRecorder()
+			c := echo.New().NewContext(r, w)
+
+			token, err := middleware.GetToken(uuid.Nil, "udin")
+			if err != nil {
+				s.Error(err, "error get token")
+			}
+			bearer := fmt.Sprintf("Bearer %s", token)
+			c.Request().Header.Set("Authorization", bearer)
+
+			err = s.service.UpdateUsername(c)
+			s.Equal(v.expectError, err)
+		})
+	}
+}
 func (s *UserSuite) TestUpdateUsernameErrorUsernameEmpty() {
 	testCase := []struct {
 		name        string

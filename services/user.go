@@ -79,7 +79,10 @@ func (s *userServices) Login(c echo.Context) (dto.Login, error) {
 }
 func (s *userServices) UpdateUsername(c echo.Context) error {
 	var u models.User
-	c.Bind(&u)
+	err := c.Bind(&u)
+	if err != nil {
+		return err
+	}
 	if u.Username == "" {
 		return errors.New("error, username should not be empty")
 	}
@@ -96,8 +99,6 @@ func (s *userServices) UpdateUsername(c echo.Context) error {
 
 	return nil
 }
-
-// TODO UpdatePassword Unit Test
 func (s *userServices) UpdatePassword(c echo.Context) error {
 	var u models.User
 	err := c.Bind(&u)
