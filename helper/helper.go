@@ -1,18 +1,11 @@
-package services
+package helper
 
 import (
 	"math/rand"
-	"pocket-message/repositories"
 	"time"
 	"unsafe"
 )
 
-func NewServices(db repositories.Database) (UserServices, PocketMessageServices) {
-	return &userServices{Database: db},
-		&pmServices{Database: db}
-}
-
-// TODO GenerateRandomString Unit Test
 func GenerateRandomString(n int) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	const (

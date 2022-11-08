@@ -7,6 +7,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func NewUserHandler(service services.UserServices) UserHandler {
+	return &userHandler{
+		UserServices: service,
+	}
+}
+
 type UserHandler interface {
 	SignUp(echo.Context) error
 	Login(echo.Context) error
@@ -18,7 +24,6 @@ type userHandler struct {
 	services.UserServices
 }
 
-// TODO SignUp Unit Test
 func (h *userHandler) SignUp(c echo.Context) error {
 	// validation
 	err := h.UserServices.SignUp(c)
@@ -29,18 +34,16 @@ func (h *userHandler) SignUp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, echo.Map{
-		"message": "success",
+		"message": "created",
 	})
 }
 
-// TODO Login Unit Test
 func (h *userHandler) Login(c echo.Context) error {
 
 	result, err := h.UserServices.Login(c)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"message": "error",
-			"error":   err.Error(),
+			"message": err.Error(),
 		})
 	}
 
@@ -50,14 +53,12 @@ func (h *userHandler) Login(c echo.Context) error {
 	})
 }
 
-// TODO UpdateUsername Unit Test
 func (h *userHandler) UpdateUsername(c echo.Context) error {
 
 	err := h.UserServices.UpdateUsername(c)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"message": "error",
-			"error":   err.Error(),
+			"message": err.Error(),
 		})
 	}
 
@@ -66,14 +67,12 @@ func (h *userHandler) UpdateUsername(c echo.Context) error {
 	})
 }
 
-// TODO UpdatePassword Unit Test
 func (h *userHandler) UpdatePassword(c echo.Context) error {
 
 	err := h.UserServices.UpdatePassword(c)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"message": "error",
-			"error":   err.Error(),
+			"message": err.Error(),
 		})
 	}
 

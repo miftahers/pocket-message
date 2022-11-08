@@ -2,8 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
 	"pocket-message/dto"
 	"pocket-message/middleware"
 	"pocket-message/models"
@@ -12,6 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
+
+func NewUserServices(db repositories.Database) UserServices {
+	return &userServices{Database: db}
+}
 
 type UserServices interface {
 	SignUp(echo.Context) error
@@ -24,7 +26,6 @@ type userServices struct {
 	repositories.Database
 }
 
-// TODO SignUp Unit Test
 func (s *userServices) SignUp(c echo.Context) error {
 	var u models.User
 	err := c.Bind(&u)
@@ -32,15 +33,14 @@ func (s *userServices) SignUp(c echo.Context) error {
 		return err
 	}
 
+	if u.Username == "" {
+		return errors.New("username should not be empty")
+	}
 	if u.Password == "" {
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "error - password should not be empty",
-		})
+		return errors.New("password should not be empty")
 	}
 
-	uuid := uuid.New()
-	u.UUID = uuid
-
+	u.UUID = uuid.New()
 	err = s.Database.SaveNewUser(u)
 	if err != nil {
 		return err
@@ -48,8 +48,6 @@ func (s *userServices) SignUp(c echo.Context) error {
 
 	return nil
 }
-
-// TODO Login Unit Test
 func (s *userServices) Login(c echo.Context) (dto.Login, error) {
 	var u models.User
 	err := c.Bind(&u)
@@ -57,10 +55,10 @@ func (s *userServices) Login(c echo.Context) (dto.Login, error) {
 		return dto.Login{}, err
 	}
 	if u.Username == "" {
-		return dto.Login{}, errors.New("error, username should not be empty")
+		return dto.Login{}, errors.New("username should not be empty")
 	}
 	if u.Password == "" {
-		return dto.Login{}, errors.New("error, password should not be empty")
+		return dto.Login{}, errors.New("password should not be empty")
 	}
 
 	user, err := s.Database.Login(u)
@@ -79,11 +77,12 @@ func (s *userServices) Login(c echo.Context) (dto.Login, error) {
 
 	return result, nil
 }
-
-// TODO UpdateUsername Unit Test
 func (s *userServices) UpdateUsername(c echo.Context) error {
 	var u models.User
-	c.Bind(&u)
+	err := c.Bind(&u)
+	if err != nil {
+		return err
+	}
 	if u.Username == "" {
 		return errors.New("error, username should not be empty")
 	}
@@ -93,8 +92,6 @@ func (s *userServices) UpdateUsername(c echo.Context) error {
 	}
 	u.UUID = t.UUID
 
-	fmt.Println(u)
-
 	err = s.Database.UpdateUsername(u)
 	if err != nil {
 		return err
@@ -102,8 +99,6 @@ func (s *userServices) UpdateUsername(c echo.Context) error {
 
 	return nil
 }
-
-// TODO UpdatePassword Unit Test
 func (s *userServices) UpdatePassword(c echo.Context) error {
 	var u models.User
 	err := c.Bind(&u)
@@ -112,14 +107,10 @@ func (s *userServices) UpdatePassword(c echo.Context) error {
 	}
 
 	if u.Username == "" {
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "error, username should not be empty",
-		})
+		return errors.New("username should not be empty")
 	}
 	if u.Password == "" {
-		return c.JSON(http.StatusBadRequest, echo.Map{
-			"message": "error, password should not be empty",
-		})
+		return errors.New("password should not be empty")
 	}
 
 	err = s.Database.UpdatePassword(u)

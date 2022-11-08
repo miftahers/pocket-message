@@ -28,9 +28,7 @@ func ConnectDB() (*gorm.DB, error) {
 	connectionString := fmt.Sprintf("root:root@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		DB_Address, DB_Name)
 
-	return gorm.Open(mysql.Open(connectionString), &gorm.Config{
-		SkipDefaultTransaction: true,
-	})
+	return gorm.Open(mysql.Open(connectionString), &gorm.Config{})
 }
 
 func MigrateDB(db *gorm.DB) error {
