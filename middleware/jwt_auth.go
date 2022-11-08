@@ -49,3 +49,4 @@ func DecodeJWT(ctx echo.Context) (dto.Token, error) {
 
 	return t, nil
 }
+

@@ -87,14 +87,6 @@ func (db GormSql) UpdateVisitCount(rid dto.PocketMessageWithRandomID) error {
 
 	return nil
 }
-func (db GormSql) GetPocketMessageRandomIDVisitByPocketMessageUUID(pmuuid string) (models.PocketMessageRandomID, error) {
-	var rid models.PocketMessageRandomID
-	err := db.DB.Where("pocket_message_uuid = ?", pmuuid).First(&rid).Error
-	if err != nil {
-		return models.PocketMessageRandomID{}, err
-	}
-	return rid, nil
-}
 func (db GormSql) UpdatePocketMessage(newMsg models.PocketMessage) error {
 	err := db.DB.Model(&newMsg).Where("uuid = ?", newMsg.UUID).Updates(models.PocketMessage{
 		Title:   newMsg.Title,
