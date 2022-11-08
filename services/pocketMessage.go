@@ -28,7 +28,6 @@ type pmServices struct {
 	repositories.Database
 }
 
-// TODO NewPocketMessage Unit Test
 func (s *pmServices) NewPocketMessage(c echo.Context) error {
 
 	var pm models.PocketMessage
@@ -48,14 +47,9 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if c.Request().Header.Get("test") == "true" {
-		pm.UUID = uuid.Nil
-	} else {
-		pm.UUID = uuid.New()
-	}
 
+	pm.UUID = uuid.New()
 	pm.UserUUID = t.UUID
-
 	err = s.Database.SaveNewPocketMessage(pm)
 	if err != nil {
 		return err
@@ -63,12 +57,7 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 
 	var rid models.PocketMessageRandomID
 	rid.PocketMessageUUID = pm.UUID
-	if c.Request().Header.Get("test") == "true" {
-		rid.RandomID = "test"
-	} else {
-		rid.RandomID = helper.GenerateRandomString(8)
-	}
-
+	rid.RandomID = helper.GenerateRandomString(8)
 	err = s.Database.SaveNewRandomID(rid)
 	if err != nil {
 		return err
@@ -76,8 +65,6 @@ func (s *pmServices) NewPocketMessage(c echo.Context) error {
 
 	return nil
 }
-
-// TODO GetPocketMessageByRandomID Unit Test
 func (s *pmServices) GetPocketMessageByRandomID(c echo.Context) (dto.PocketMessageWithRandomID, error) {
 
 	rid := c.Param("random_id")
@@ -97,8 +84,6 @@ func (s *pmServices) GetPocketMessageByRandomID(c echo.Context) (dto.PocketMessa
 
 	return result, nil
 }
-
-// TODO UpdatePocketMessage Unit Test
 func (s *pmServices) UpdatePocketMessage(c echo.Context) error {
 	var pm models.PocketMessage
 	err := c.Bind(&pm)
@@ -115,7 +100,7 @@ func (s *pmServices) UpdatePocketMessage(c echo.Context) error {
 
 	pm.UUID, err = uuid.Parse(c.Param("uuid"))
 	if err != nil {
-		return err
+		return errors.New("uuid invalid")
 	}
 
 	err = s.Database.UpdatePocketMessage(pm)
@@ -125,12 +110,10 @@ func (s *pmServices) UpdatePocketMessage(c echo.Context) error {
 
 	return nil
 }
-
-// TODO DeletePocketMessage Unit Test
 func (s *pmServices) DeletePocketMessage(c echo.Context) error {
 	uuid, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
-		return err
+		return errors.New("uuid invalid")
 	}
 	err = s.Database.DeletePocketMessage(uuid)
 	if err != nil {
@@ -139,13 +122,12 @@ func (s *pmServices) DeletePocketMessage(c echo.Context) error {
 
 	return nil
 }
-
-// TODO GetUserPocketMessage Unit Test
 func (s *pmServices) GetUserPocketMessage(c echo.Context) ([]dto.OwnedMessage, error) {
 	t, err := middleware.DecodeJWT(c)
 	if err != nil {
 		return nil, err
 	}
+
 	result, err := s.Database.GetPocketMessageByUserUUID(t.UUID)
 	if err != nil {
 		return nil, err
