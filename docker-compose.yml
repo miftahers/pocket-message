@@ -9,8 +9,6 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 5s
-    networks:
-    - pocket-message-networks
     ports:
       - '3306:3306'
     expose:
@@ -28,8 +26,3 @@ services:
       - "80:8080"
     expose:
       - '80'
-    networks:
-      - pocket-message-networks
-
-networks:
-  pocket-message-networks
