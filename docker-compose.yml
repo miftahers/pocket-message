@@ -5,7 +5,7 @@ services:
     image: mysql:8.0.28
     environment:
       MYSQL_ROOT_PASSWORD: "root"
-      MYSQL_DATABASE: "pocket-message"
+      MYSQL_DATABASE: "pocket_message"
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 15s
