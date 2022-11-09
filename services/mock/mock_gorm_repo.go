@@ -57,12 +57,9 @@ func (db *MockGorm) GetPocketMessageByRandomID(rid string) (dto.PocketMessageWit
 	if rid == "superidol" {
 		return dto.PocketMessageWithRandomID{}, errors.New("record not found")
 	} else if rid == "igantenk" {
-		return dto.PocketMessageWithRandomID{
-			UUID: uuid.Nil,
-		}, nil
+		return dto.PocketMessageWithRandomID{}, nil
 	}
 	return dto.PocketMessageWithRandomID{
-		UUID:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		Title: "selsya bahagia",
 	}, nil
 }

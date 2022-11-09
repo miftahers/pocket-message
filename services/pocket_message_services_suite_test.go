@@ -268,7 +268,6 @@ func (s *PocketMessageSuite) TestGetPocketMessageByRandomID() {
 			paramName:  "random_id",
 			paramValue: "asdfghjk",
 			expectBody: dto.PocketMessageWithRandomID{
-				UUID:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Title: "selsya bahagia",
 			},
 			expectError: nil,

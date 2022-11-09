@@ -2,7 +2,7 @@ package main
 
 import (
 	"pocket-message/configs"
-	"pocket-message/database"
+	"pocket-message/configs/database"
 	"pocket-message/routes"
 )
 

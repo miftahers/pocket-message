@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
+	"pocket-message/middleware"
+	"pocket-message/models"
 	"pocket-message/services"
 
 	"github.com/labstack/echo/v4"
@@ -26,7 +29,27 @@ type userHandler struct {
 
 func (h *userHandler) SignUp(c echo.Context) error {
 	// validation
-	err := h.UserServices.SignUp(c)
+	var u models.User
+
+	err := c.Bind(&u)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": err.Error(),
+		})
+	}
+
+	if u.Username == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("username should not be empty"),
+		})
+	}
+	if u.Password == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("password should not be empty"),
+		})
+	}
+
+	err = h.UserServices.SignUp(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -40,7 +63,26 @@ func (h *userHandler) SignUp(c echo.Context) error {
 
 func (h *userHandler) Login(c echo.Context) error {
 
-	result, err := h.UserServices.Login(c)
+	var u models.User
+	err := c.Bind(&u)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": err.Error(),
+		})
+	}
+
+	if u.Username == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("username should not be empty"),
+		})
+	}
+	if u.Password == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("password should not be empty"),
+		})
+	}
+
+	result, err := h.UserServices.Login(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -54,8 +96,28 @@ func (h *userHandler) Login(c echo.Context) error {
 }
 
 func (h *userHandler) UpdateUsername(c echo.Context) error {
+	var u models.User
+	err := c.Bind(&u)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": err.Error(),
+		})
+	}
 
-	err := h.UserServices.UpdateUsername(c)
+	if u.Username == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("error, username should not be empty"),
+		})
+	}
+
+	t, err := middleware.DecodeJWT(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": err.Error(),
+		})
+	}
+
+	err = h.UserServices.UpdateUsername(u, t)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -68,8 +130,26 @@ func (h *userHandler) UpdateUsername(c echo.Context) error {
 }
 
 func (h *userHandler) UpdatePassword(c echo.Context) error {
+	var u models.User
+	err := c.Bind(&u)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": err.Error(),
+		})
+	}
 
-	err := h.UserServices.UpdatePassword(c)
+	if u.Username == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("username should not be empty"),
+		})
+	}
+	if u.Password == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": errors.New("password should not be empty"),
+		})
+	}
+
+	err = h.UserServices.UpdatePassword(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),

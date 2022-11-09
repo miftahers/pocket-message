@@ -24,17 +24,23 @@ func Init(db *gorm.DB) *echo.Echo {
 	uHandler := controllers.NewUserHandler(userServ)
 	pmHandler := controllers.NewPocketMessageHandler(pmServ)
 
-	api := e.Group("/api")                                                                                          // host:port/api/...
-	v1 := api.Group("/v1")                                                                                          // host:port/api/v1/...
-	v1.POST("/signup", uHandler.SignUp)                                                                             // host:port/api/v1/signup
-	v1.POST("/login", uHandler.Login)                                                                               // host:port/api/v1/login
-	v1.PUT("/users/reset-password", uHandler.UpdatePassword)                                                        // host:port/api/v1/users/reset-password
-	v1.PUT("/users/change-username", uHandler.UpdateUsername, middleware.JWT([]byte(configs.TokenSecret)))          // host:port/api/v1/users/change-username
-	v1.POST("/pocket-messages", pmHandler.NewPocketMessage, middleware.JWT([]byte(configs.TokenSecret)))            // host:port/api/v1/pocket-messages
-	v1.GET("/msg/:random_id", pmHandler.GetPocketMessageByRandomID)                                                 // host:port/api/v1/msg/:random_id
-	v1.PUT("/pocket-messages/:uuid", pmHandler.UpdatePocketMessage, middleware.JWT([]byte(configs.TokenSecret)))    // host:port/api/v1/pocket-messages/:uuid
-	v1.DELETE("/pocket-messages/:uuid", pmHandler.DeletePocketMessage, middleware.JWT([]byte(configs.TokenSecret))) // host:port/api/v1/pocket-messages/:uuid
-	v1.GET("/pocket-messages", pmHandler.GetOwnedPocketMessage, middleware.JWT([]byte(configs.TokenSecret)))        // host:port/api/v1/pocket-messages
+	api := e.Group("/api")
+	v1 := api.Group("/v1")
+
+	users := v1.Group("/users")
+	users.POST("/signup", uHandler.SignUp)                                                              // host:port/api/v1/users/signup
+	users.POST("/login", uHandler.Login)                                                                // host:port/api/v1/users/login
+	users.PUT("/reset-password", uHandler.UpdatePassword)                                               // host:port/api/v1/users/reset-password
+	users.PUT("/change-username", uHandler.UpdateUsername, middleware.JWT([]byte(configs.TokenSecret))) // host:port/api/v1/users/change-username
+
+	pocketMessages := v1.Group("/pocket-messages")
+	pocketMessages.POST("", pmHandler.NewPocketMessage, middleware.JWT([]byte(configs.TokenSecret)))            // host:port/api/v1/pocket-messages
+	pocketMessages.PUT("/:uuid", pmHandler.UpdatePocketMessage, middleware.JWT([]byte(configs.TokenSecret)))    // host:port/api/v1/pocket-messages/:uuid
+	pocketMessages.DELETE("/:uuid", pmHandler.DeletePocketMessage, middleware.JWT([]byte(configs.TokenSecret))) // host:port/api/v1/pocket-messages/:uuid
+	pocketMessages.GET("", pmHandler.GetOwnedPocketMessage, middleware.JWT([]byte(configs.TokenSecret)))        // host:port/api/v1/pocket-messages
+
+	msg := pocketMessages.Group("/msg")
+	msg.GET("/:random_id", pmHandler.GetPocketMessageByRandomID) // host:port/api/v1/pocket-messages/msg/:random_id
 
 	return e
 }

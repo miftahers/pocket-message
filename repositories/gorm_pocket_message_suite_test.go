@@ -1,13 +1,11 @@
 package repositories
 
 import (
-	"database/sql/driver"
 	"errors"
 	"pocket-message/dto"
 	"pocket-message/models"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -16,17 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type GormSuite struct {
+type GormPocketMessageSuite struct {
 	suite.Suite
 	mock sqlmock.Sqlmock
 	repo Database
 }
 
-func TestSuiteGorm(t *testing.T) {
-	suite.Run(t, new(GormSuite))
+func TestSuiteGormPocketMessage(t *testing.T) {
+	suite.Run(t, new(GormPocketMessageSuite))
 }
 
-func (s *GormSuite) SetupSuite() {
+func (s *GormPocketMessageSuite) SetupSuite() {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		s.Error(err)
@@ -45,260 +43,10 @@ func (s *GormSuite) SetupSuite() {
 	s.mock = mock
 }
 
-func (s *GormSuite) TearDownSuite() {}
-
-type AnyTime struct{}
-
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
-}
-
-// SaveNewUser
-func (s *GormSuite) TestSaveNewUser() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "save_new_user-normal",
-			body: models.User{
-				Username: "aku",
-				Password: "akuGantenk",
-			},
-			expectError: nil,
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`uuid`,`username`,`password`,`pocket_message`) VALUES (?,?,?,?,?,?,(NULL))")).
-				WithArgs(AnyTime{}, AnyTime{}, nil, "00000000-0000-0000-0000-000000000000", "aku", "akuGantenk").
-				WillReturnResult(sqlmock.NewResult(1, 1))
-			s.mock.ExpectCommit()
-
-			err := s.repo.SaveNewUser(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
-func (s *GormSuite) TestSaveNewUserError() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "save_new_user-error",
-			body: models.User{
-				Username: "aku",
-				Password: "akuGantenk",
-			},
-			expectError: errors.New("database error"),
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`uuid`,`username`,`password`,`pocket_message`) VALUES (?,?,?,?,?,?,(NULL))")).
-				WithArgs(AnyTime{}, AnyTime{}, nil, "00000000-0000-0000-0000-000000000000", "aku", "akuGantenk").
-				WillReturnError(errors.New("database error"))
-			s.mock.ExpectRollback()
-
-			err := s.repo.SaveNewUser(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
-
-// Login
-func (s *GormSuite) TestLogin() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectBody  models.User
-		expectError error
-	}{
-		{
-			name: "login-normal",
-			body: models.User{
-				Username: "userTest",
-				Password: "passwordTest",
-			},
-			expectBody: models.User{
-				UUID:     uuid.Nil,
-				Username: "userTest",
-				Password: "passwordTest",
-			},
-			expectError: nil,
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			expectRow := s.mock.NewRows([]string{"uuid", "username", "password"}).
-				AddRow("00000000-0000-0000-0000-000000000000", "userTest", "passwordTest")
-
-			s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE (username = ? AND password = ?) AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1")).
-				WithArgs("userTest", "passwordTest").
-				WillReturnRows(expectRow)
-
-			result, err := s.repo.Login(v.body)
-			s.Equal(v.expectError, err)
-			s.Equal(v.expectBody, result)
-		})
-	}
-}
-func (s *GormSuite) TestLoginError() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectBody  models.User
-		expectError error
-	}{
-		{
-			name: "login-error",
-			body: models.User{
-				Username: "userTest",
-				Password: "passwordTest",
-			},
-			expectBody:  models.User{},
-			expectError: errors.New("record not found"),
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE (username = ? AND password = ?) AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1")).
-				WithArgs("userTest", "passwordTest").
-				WillReturnError(errors.New("record not found"))
-
-			result, err := s.repo.Login(v.body)
-			s.Equal(v.expectError, err)
-			s.Equal(v.expectBody, result)
-		})
-	}
-}
-
-// Update Username
-func (s *GormSuite) TestUpdateUsername() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "update_username-normal",
-			body: models.User{
-				UUID:     uuid.Nil,
-				Username: "userTest69",
-				Password: "passwordTest",
-			},
-			expectError: nil,
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET `username`=?,`updated_at`=? WHERE uuid = ? AND `users`.`deleted_at` IS NULL")).
-				WithArgs("userTest69", AnyTime{}, uuid.Nil).
-				WillReturnResult(sqlmock.NewResult(1, 1))
-			s.mock.ExpectCommit()
-
-			err := s.repo.UpdateUsername(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
-func (s *GormSuite) TestUpdateUsernameError() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "update_username-error",
-			body: models.User{
-				UUID:     uuid.Nil,
-				Username: "userTest69",
-				Password: "passwordTest",
-			},
-			expectError: errors.New("record not found"),
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET `username`=?,`updated_at`=? WHERE uuid = ? AND `users`.`deleted_at` IS NULL")).
-				WithArgs("userTest69", AnyTime{}, uuid.Nil).
-				WillReturnError(errors.New("record not found"))
-			s.mock.ExpectRollback()
-
-			err := s.repo.UpdateUsername(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
-
-// Update Password
-func (s *GormSuite) TestUpdatePassword() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "update_password-normal",
-			body: models.User{
-				Username: "userTest69",
-				Password: "passwordTest79",
-			},
-			expectError: nil,
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET `password`=?,`updated_at`=? WHERE username = ? AND `users`.`deleted_at` IS NULL")).
-				WithArgs("passwordTest79", AnyTime{}, "userTest69").
-				WillReturnResult(sqlmock.NewResult(1, 1))
-			s.mock.ExpectCommit()
-
-			err := s.repo.UpdatePassword(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
-func (s *GormSuite) TestUpdatePasswordError() {
-	testCase := []struct {
-		name        string
-		body        models.User
-		expectError error
-	}{
-		{
-			name: "update_password-error",
-			body: models.User{
-				Username: "userTest69",
-				Password: "passwordTest79",
-			},
-			expectError: errors.New("record not found"),
-		},
-	}
-	for _, v := range testCase {
-		s.T().Run(v.name, func(t *testing.T) {
-			s.mock.ExpectBegin()
-			s.mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET `password`=?,`updated_at`=? WHERE username = ? AND `users`.`deleted_at` IS NULL")).
-				WithArgs("passwordTest79", AnyTime{}, "userTest69").
-				WillReturnError(errors.New("record not found"))
-			s.mock.ExpectRollback()
-
-			err := s.repo.UpdatePassword(v.body)
-			s.Equal(v.expectError, err)
-		})
-	}
-}
+func (s *GormPocketMessageSuite) TearDownSuite() {}
 
 // NewPocketMessage
-func (s *GormSuite) TestNewPocketMessage() {
+func (s *GormPocketMessageSuite) TestNewPocketMessage() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessage
@@ -328,7 +76,7 @@ func (s *GormSuite) TestNewPocketMessage() {
 		})
 	}
 }
-func (s *GormSuite) TestNewPocketMessageError() {
+func (s *GormPocketMessageSuite) TestNewPocketMessageError() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessage
@@ -360,7 +108,7 @@ func (s *GormSuite) TestNewPocketMessageError() {
 }
 
 // Save NewRandomID
-func (s *GormSuite) TestSaveNewRandomID() {
+func (s *GormPocketMessageSuite) TestSaveNewRandomID() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessageRandomID
@@ -389,7 +137,7 @@ func (s *GormSuite) TestSaveNewRandomID() {
 		})
 	}
 }
-func (s *GormSuite) TestSaveNewRandomIDError() {
+func (s *GormPocketMessageSuite) TestSaveNewRandomIDError() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessageRandomID
@@ -420,7 +168,7 @@ func (s *GormSuite) TestSaveNewRandomIDError() {
 }
 
 // GetPocketMessageByRandomID
-func (s *GormSuite) TestGetPocketMessageByRandomID() {
+func (s *GormPocketMessageSuite) TestGetPocketMessageByRandomID() {
 	testCase := []struct {
 		name        string
 		randomID    string
@@ -454,7 +202,7 @@ func (s *GormSuite) TestGetPocketMessageByRandomID() {
 		})
 	}
 }
-func (s *GormSuite) TestGetPocketMessageByRandomIDError() {
+func (s *GormPocketMessageSuite) TestGetPocketMessageByRandomIDError() {
 	testCase := []struct {
 		name        string
 		randomID    string
@@ -482,7 +230,7 @@ func (s *GormSuite) TestGetPocketMessageByRandomIDError() {
 }
 
 // Update VisitCount
-func (s *GormSuite) TestUpdateVisitCount() {
+func (s *GormPocketMessageSuite) TestUpdateVisitCount() {
 	testCase := []struct {
 		name        string
 		body        dto.PocketMessageWithRandomID
@@ -510,7 +258,7 @@ func (s *GormSuite) TestUpdateVisitCount() {
 		})
 	}
 }
-func (s *GormSuite) TestUpdateVisitCountError() {
+func (s *GormPocketMessageSuite) TestUpdateVisitCountError() {
 	testCase := []struct {
 		name        string
 		body        dto.PocketMessageWithRandomID
@@ -540,7 +288,7 @@ func (s *GormSuite) TestUpdateVisitCountError() {
 }
 
 // UpdatePocketMessage
-func (s *GormSuite) TestUpdatePocketMessage() {
+func (s *GormPocketMessageSuite) TestUpdatePocketMessage() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessage
@@ -569,7 +317,7 @@ func (s *GormSuite) TestUpdatePocketMessage() {
 		})
 	}
 }
-func (s *GormSuite) TestUpdatePocketMessageError() {
+func (s *GormPocketMessageSuite) TestUpdatePocketMessageError() {
 	testCase := []struct {
 		name        string
 		body        models.PocketMessage
@@ -600,7 +348,7 @@ func (s *GormSuite) TestUpdatePocketMessageError() {
 }
 
 // DeletePocketMessage
-func (s *GormSuite) TestDeletePocketMessage() {
+func (s *GormPocketMessageSuite) TestDeletePocketMessage() {
 	testCase := []struct {
 		name        string
 		id          uuid.UUID
@@ -625,7 +373,7 @@ func (s *GormSuite) TestDeletePocketMessage() {
 		})
 	}
 }
-func (s *GormSuite) TestDeletePocketMessageError() {
+func (s *GormPocketMessageSuite) TestDeletePocketMessageError() {
 	testCase := []struct {
 		name        string
 		id          uuid.UUID
@@ -652,7 +400,7 @@ func (s *GormSuite) TestDeletePocketMessageError() {
 }
 
 // GetPocketMessageByUserUUID
-func (s *GormSuite) TestGetPocketMessageByUserUUID() {
+func (s *GormPocketMessageSuite) TestGetPocketMessageByUserUUID() {
 	testCase := []struct {
 		name        string
 		id          uuid.UUID
@@ -688,7 +436,7 @@ func (s *GormSuite) TestGetPocketMessageByUserUUID() {
 		})
 	}
 }
-func (s *GormSuite) TestGetPocketMessageByUserUUIDError() {
+func (s *GormPocketMessageSuite) TestGetPocketMessageByUserUUIDError() {
 	testCase := []struct {
 		name        string
 		id          uuid.UUID
