@@ -22,7 +22,10 @@ services:
         condition: service_healthy
     environment:
       APIPort: ":8080"
-      DB_ADDRESS: "db-mysql:3306"
+      DB_USER: "root"
+      DB_PASSWORD: "root"
+      DB_HOST: "db-mysql"
+      DB_PORT: "3306"
       DB_NAME: "pocket_message"
     ports:
       - "80:8080"
