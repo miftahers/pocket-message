@@ -1,36 +1,25 @@
-package controllers
+package pocket_messages
 
 import (
 	"errors"
 	"net/http"
 	"pocket-message/middleware"
 	"pocket-message/models"
-	"pocket-message/services"
+	"pocket-message/services/pocket_messages"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-func NewPocketMessageHandler(service services.PocketMessageServices) PocketMessageHandler {
-	return &pocketMessageHandler{
-		PocketMessageServices: service,
-	}
+type PocketMessageHandler struct {
+	pocket_messages.IPocketMessageServices
 }
 
-type PocketMessageHandler interface {
-	NewPocketMessage(echo.Context) error
-	GetPocketMessageByRandomID(echo.Context) error
-	UpdatePocketMessage(echo.Context) error
-	DeletePocketMessage(echo.Context) error
-	GetOwnedPocketMessage(echo.Context) error
-}
-type pocketMessageHandler struct {
-	services.PocketMessageServices
-}
-
-func (h *pocketMessageHandler) NewPocketMessage(c echo.Context) error {
+func (h *PocketMessageHandler) NewPocketMessage(c echo.Context) error {
 
 	var pm models.PocketMessage
+
+	// retrieve data from request
 	err := c.Bind(&pm)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{
@@ -38,6 +27,7 @@ func (h *pocketMessageHandler) NewPocketMessage(c echo.Context) error {
 		})
 	}
 
+	// Validasi data
 	if pm.Title == "" {
 		return c.JSON(http.StatusBadRequest, echo.Map{
 			"message": errors.New("title should not be empty"),
@@ -49,14 +39,15 @@ func (h *pocketMessageHandler) NewPocketMessage(c echo.Context) error {
 		})
 	}
 
+	// Get obj that include User_UUID from JWT
 	t, err := middleware.DecodeJWT(c)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{
+		return c.JSON(http.StatusBadRequest, echo.Map{
 			"message": err.Error(),
 		})
 	}
 
-	err = h.PocketMessageServices.NewPocketMessage(pm, t)
+	err = h.IPocketMessageServices.NewPocketMessage(pm, t)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -66,8 +57,9 @@ func (h *pocketMessageHandler) NewPocketMessage(c echo.Context) error {
 		"message": "created",
 	})
 }
-func (h *pocketMessageHandler) GetPocketMessageByRandomID(c echo.Context) error {
+func (h *PocketMessageHandler) GetPocketMessageByRandomID(c echo.Context) error {
 
+	// Get random id from path parameter
 	rid := c.Param("random_id")
 	if rid == "" {
 		return c.JSON(http.StatusBadRequest, echo.Map{
@@ -75,7 +67,7 @@ func (h *pocketMessageHandler) GetPocketMessageByRandomID(c echo.Context) error 
 		})
 	}
 
-	result, err := h.PocketMessageServices.GetPocketMessageByRandomID(rid)
+	result, err := h.IPocketMessageServices.GetPocketMessageByRandomID(rid)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -87,7 +79,7 @@ func (h *pocketMessageHandler) GetPocketMessageByRandomID(c echo.Context) error 
 		"data":    result,
 	})
 }
-func (h *pocketMessageHandler) UpdatePocketMessage(c echo.Context) error {
+func (h *PocketMessageHandler) UpdatePocketMessage(c echo.Context) error {
 
 	id, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
@@ -117,7 +109,7 @@ func (h *pocketMessageHandler) UpdatePocketMessage(c echo.Context) error {
 
 	pm.UUID = id
 
-	err = h.PocketMessageServices.UpdatePocketMessage(pm)
+	err = h.IPocketMessageServices.UpdatePocketMessage(pm)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -128,7 +120,7 @@ func (h *pocketMessageHandler) UpdatePocketMessage(c echo.Context) error {
 		"message": "updated",
 	})
 }
-func (h *pocketMessageHandler) DeletePocketMessage(c echo.Context) error {
+func (h *PocketMessageHandler) DeletePocketMessage(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{
@@ -136,7 +128,7 @@ func (h *pocketMessageHandler) DeletePocketMessage(c echo.Context) error {
 		})
 	}
 
-	err = h.PocketMessageServices.DeletePocketMessage(id)
+	err = h.IPocketMessageServices.DeletePocketMessage(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -147,7 +139,7 @@ func (h *pocketMessageHandler) DeletePocketMessage(c echo.Context) error {
 		"message": "deleted",
 	})
 }
-func (h *pocketMessageHandler) GetOwnedPocketMessage(c echo.Context) error {
+func (h *PocketMessageHandler) GetOwnedPocketMessage(c echo.Context) error {
 	t, err := middleware.DecodeJWT(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{
@@ -155,7 +147,7 @@ func (h *pocketMessageHandler) GetOwnedPocketMessage(c echo.Context) error {
 		})
 	}
 
-	result, err := h.PocketMessageServices.GetUserPocketMessage(t)
+	result, err := h.IPocketMessageServices.GetUserPocketMessage(t)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),

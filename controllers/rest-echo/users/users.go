@@ -1,33 +1,20 @@
-package controllers
+package users
 
 import (
 	"errors"
 	"net/http"
 	"pocket-message/middleware"
 	"pocket-message/models"
-	"pocket-message/services"
+	"pocket-message/services/users"
 
 	"github.com/labstack/echo/v4"
 )
 
-func NewUserHandler(service services.UserServices) UserHandler {
-	return &userHandler{
-		UserServices: service,
-	}
+type UserHandler struct {
+	users.IUserServices
 }
 
-type UserHandler interface {
-	SignUp(echo.Context) error
-	Login(echo.Context) error
-	UpdateUsername(echo.Context) error
-	UpdatePassword(echo.Context) error
-}
-
-type userHandler struct {
-	services.UserServices
-}
-
-func (h *userHandler) SignUp(c echo.Context) error {
+func (h *UserHandler) SignUp(c echo.Context) error {
 	// validation
 	var u models.User
 
@@ -49,7 +36,7 @@ func (h *userHandler) SignUp(c echo.Context) error {
 		})
 	}
 
-	err = h.UserServices.SignUp(u)
+	err = h.IUserServices.SignUp(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -61,7 +48,7 @@ func (h *userHandler) SignUp(c echo.Context) error {
 	})
 }
 
-func (h *userHandler) Login(c echo.Context) error {
+func (h *UserHandler) Login(c echo.Context) error {
 
 	var u models.User
 	err := c.Bind(&u)
@@ -82,7 +69,7 @@ func (h *userHandler) Login(c echo.Context) error {
 		})
 	}
 
-	result, err := h.UserServices.Login(u)
+	result, err := h.IUserServices.Login(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -95,7 +82,7 @@ func (h *userHandler) Login(c echo.Context) error {
 	})
 }
 
-func (h *userHandler) UpdateUsername(c echo.Context) error {
+func (h *UserHandler) UpdateUsername(c echo.Context) error {
 	var u models.User
 	err := c.Bind(&u)
 	if err != nil {
@@ -117,7 +104,7 @@ func (h *userHandler) UpdateUsername(c echo.Context) error {
 		})
 	}
 
-	err = h.UserServices.UpdateUsername(u, t)
+	err = h.IUserServices.UpdateUsername(u, t)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),
@@ -129,7 +116,7 @@ func (h *userHandler) UpdateUsername(c echo.Context) error {
 	})
 }
 
-func (h *userHandler) UpdatePassword(c echo.Context) error {
+func (h *UserHandler) UpdatePassword(c echo.Context) error {
 	var u models.User
 	err := c.Bind(&u)
 	if err != nil {
@@ -149,7 +136,7 @@ func (h *userHandler) UpdatePassword(c echo.Context) error {
 		})
 	}
 
-	err = h.UserServices.UpdatePassword(u)
+	err = h.IUserServices.UpdatePassword(u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{
 			"message": err.Error(),

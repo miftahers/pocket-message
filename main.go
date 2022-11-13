@@ -2,23 +2,27 @@ package main
 
 import (
 	"pocket-message/configs"
-	"pocket-message/configs/database"
+	configDB "pocket-message/configs/database"
 	"pocket-message/routes"
+	v1 "pocket-message/routes/v1"
 )
 
 func main() {
-	db, err := database.ConnectDB()
-	if err != nil {
-		panic(err)
+
+	configs.InitConfig()
+	configDB.InitDatabase()
+
+	routePayload := &routes.Payload{
+		DBGorm: configDB.DB,
+		Config: configs.Cfg,
 	}
 
-	err = database.MigrateDB(db)
-	if err != nil {
-		panic(err)
-	}
+	routePayload.InitUserService()
 
-	e := routes.Init(db)
-	err = e.Start(configs.APIPort)
+	e, trace := v1.InitRoute(routePayload)
+	defer trace.Close()
+
+	err := e.Start(configs.Cfg.APIPort)
 	if err != nil {
 		panic(err)
 	}
