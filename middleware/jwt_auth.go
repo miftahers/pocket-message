@@ -21,7 +21,7 @@ func GetToken(uuid uuid.UUID, username string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(configs.TokenSecret))
+	return token.SignedString([]byte(configs.Cfg.TokenSecret))
 }
 
 func DecodeJWT(ctx echo.Context) (dto.Token, error) {
@@ -36,7 +36,7 @@ func DecodeJWT(ctx echo.Context) (dto.Token, error) {
 	auth = splitToken[1]
 
 	token, err := jwt.ParseWithClaims(auth, &dto.Token{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(configs.TokenSecret), nil
+		return []byte(configs.Cfg.TokenSecret), nil
 	})
 	if err != nil {
 		return dto.Token{}, errors.New("token is wrong or expired")
